@@ -20,9 +20,9 @@ variable "keyvault_name" {
   type = string
 
 }
-# variable "acr" {
-#   type = string
-# }
+variable "acr" {
+  type = string
+}
 # variable "backendsa" {
 #   type = string
 # }

@@ -72,16 +72,16 @@ resource "azurerm_key_vault_secret" "example" {
     module.keyvault
   ]
 }
-# resource "azurerm_container_registry" "acr" {
-#   name                = var.acr
-#   resource_group_name = var.resource_group_name
-#   location            = var.location
-#   sku                 = "Basic"
-#   admin_enabled       = false
-#   depends_on = [
-#     azurerm_resource_group.demo_rg
-#   ]
-# }
+resource "azurerm_container_registry" "acr" {
+  name                = var.acr
+  resource_group_name = var.resource_group_name
+  location            = var.location
+  sku                 = "Basic"
+  admin_enabled       = false
+  depends_on = [
+    azurerm_resource_group.demo_rg
+  ]
+}
 # resource "azurerm_role_assignment" "example" {
 #   principal_id                     = module.ServicePrincipal.service_principal_object_id
 #   role_definition_name             = "AcrPull"
