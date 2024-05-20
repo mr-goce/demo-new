@@ -1,0 +1,65 @@
+name: CI/CD
+
+on:
+  push:
+    paths:
+      - 'developer/posts/**'
+      - 'helm-charts/ghost/**'
+  workflow_dispatch:
+
+jobs:
+  deploy-ghost:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Kubernetes tools
+      uses: Azure/setup-helm@v3
+      with:
+        version: v3.6.3
+
+    - name: Azure login
+      uses: azure/login@v1
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+    - name: Set up kubectl
+      uses: azure/setup-kubectl@v1
+      with:
+        version: 'v1.19.11'
+
+    - name: Get AKS credentials
+      run: az aks get-credentials --resource-group ${{ secrets.AKS_RESOURCE_GROUP }} --name ${{ secrets.AKS_CLUSTER_NAME }}
+
+    - name: Helm Upgrade Dev
+      if: github.ref == 'refs/heads/dev'
+      run: |
+        helm upgrade --install ghost ./helm-charts/ghost --namespace dev --create-namespace -f ./helm-charts/ghost/values-dev.yaml
+
+    - name: Helm Upgrade Staging
+      if: github.ref == 'refs/heads/stg'
+      run: |
+        helm upgrade --install ghost ./helm-charts/ghost --namespace stg --create-namespace -f ./helm-charts/ghost/values-stg.yaml
+
+    - name: Helm Upgrade Main
+      if: github.ref == 'refs/heads/main'
+      run: |
+        helm upgrade --install ghost ./helm-charts/ghost --namespace main --create-namespace -f ./helm-charts/ghost/values-main.yaml
+    - name: Deploy Ghost with Helm
+      run: |
+        helm upgrade --install ghost ./helm-charts/ghost --namespace ghost --create-namespace \
+          --set ghostUsername=${{ secrets.GHOST_USERNAME }} \
+          --set ghostPassword=${{ secrets.GHOST_PASSWORD }} \
+          --set ghostEmail=${{ secrets.GHOST_EMAIL }} \
+          --set mariadb.auth.rootPassword=${{ secrets.MARIADB_ROOT_PASSWORD }} \
+          --set mariadb.auth.password=${{ secrets.MARIADB_PASSWORD }} \
+          --set service.type=LoadBalancer
+
+    - name: Update posts
+      run: |
+        # Logic to update posts in Ghost
+        echo "Updating posts in Ghost platform"
