@@ -82,12 +82,12 @@ resource "azurerm_container_registry" "acr" {
     azurerm_resource_group.demo_rg
   ]
 }
-resource "azurerm_role_assignment" "example" {
-  principal_id                     = module.ServicePrincipal.service_principal_object_id
-  role_definition_name             = "AcrPull"
-  scope                            = azurerm_container_registry.acr.id
-  skip_service_principal_aad_check = true
-}
+# resource "azurerm_role_assignment" "example" {
+#   principal_id                     = module.ServicePrincipal.service_principal_object_id
+#   role_definition_name             = "AcrPull"
+#   scope                            = azurerm_container_registry.acr.id
+#   skip_service_principal_aad_check = true
+# }
 # create Azure Kubernetes Service
 module "aks" {
   source                  = "./modules/aks/"
