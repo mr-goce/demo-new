@@ -3,16 +3,26 @@
 ## Overview
 
 This project deploys the Ghost blogging platform on an Azure Kubernetes Service (AKS) cluster using Terraform for infrastructure management and Helm for application deployment. It also includes a directory for Markdown posts which can trigger a CI/CD pipeline to build and deploy the Ghost platform.
-Code is located on github repository and github actions is used for CICD part
+Code is located on github repository and github actions is used for CICD workflow.
 
 ## Directory Structure
-Project code is located in three main folders
+
+ Project has four main folders
+
   - Infrastructure
   - developer
   - helm-charts
+  - github cicd
 
 ├── infrastructure
 │ └── (Terraform code for infrastructure management)
+  └── environments
+    └── dev
+       └── terraform.tfvars
+    └── stg
+       └── terraform.tfvars
+    └── main
+       └── terraform.tfvars
 ├── developer
 │ └── posts
 │ ├── my-first-post.md
@@ -27,14 +37,15 @@ Project code is located in three main folders
 │ ├── templates
 │ └── (other chart files)
 └── .github
-└── workflows
-└── ci-cd.yml
-
+  └── workflows
+  └── ci-workflow.yml
+  └── cd-workflow.yml  
+  └── cicd-developer-workflow.yml
 
 ### Infrastructure
 
 The `infrastructure` directory contains Terraform code used to set up and manage the Azure resources required for the project. This includes the AKS cluster and any necessary Azure resources like Storage Accounts, Key Vaults, etc.
-This is parametarized stucture for dev, stg and main environments. User can deploy Azure resources using his laptop or using gihub actions workflows
+This is parametarized stucture for dev, stg and main environments. User can deploy Azure resources using his laptop or using gihub actions workflows `ci-workflow.yml` and `cd-workflow.yml`
 
 #### Terraform Overview
 
@@ -68,31 +79,18 @@ To deploy resources using Terraform for a specific environment, you can follow t
 
 2. Create an execution plan:
     ```sh
-    terraform plan -var-file=envs/dev.tfvars
+    terraform plan -var-file=environments/dev/terraform.tfvars
     ```
 
 3. Apply the changes:
     ```sh
-    terraform apply -var-file=envs/dev.tfvars
+    terraform apply -var-file=environments/dev/terraform.tfvars
     ```
 
 4. For destroying the resources when they are no longer needed:
     ```sh
-    terraform destroy -var-file=envs/dev.tfvars
+    terraform destroy -var-file=environments/dev/terraform.tfvars
     ```
-#### CICD 
- - `ci-workflow.yml` is pipeline for CI purposes. It is started on pull requests towards dev, stg or main and changes on terraform files in the infrastructure directory. It performs terraform init and terraform plan and provide feedback for the result.
- - `cd-workflow.yml` is pipeline for CD purposes. It is triggered when working branch is dev, stg or main
-#### Improvements:
-Multi-Region AKS Deployment with Backup and Disaster Recovery
-
-This repository contains Terraform scripts to deploy Azure Kubernetes Service (AKS) clusters across multiple regions to ensure high availability and disaster recovery. The setup includes:
-
-- Primary AKS cluster in West Europe.
-- Secondary AKS cluster in North Europe for failover.
-- Azure Traffic Manager to distribute traffic between the clusters.
-- Backup strategies for stateful data.
-
 
 ### Developer
 
@@ -100,11 +98,17 @@ The `developer` directory contains Markdown files for blog posts. Each Markdown 
 
 ### Helm Charts
 
-The `helm-charts` directory contains the Helm chart for deploying the Ghost platform. This chart is pulled from Bitnami and customized for the deployment.
+The `helm-charts` directory contains the Helm chart for deploying the Ghost platform. This chart is pulled from Bitnami and customized for the deployment. 
+  `https://github.com/bitnami/charts/blob/main/bitnami/ghost/README.md`
 
+The chart provides various options for deploying a Ghost platform, including configurations for primary and secondary MySQL databases using StatefulSets, ingress, and service accounts. This Helm chart is sourced from the Bitnami repository and can be customized to meet specific project requirements.
 ### GitHub Workflows
 
-The `.github/workflows` directory contains GitHub Actions workflows for CI/CD. The `ci-cd.yml` workflow is triggered by changes to the `developer/posts` directory and handles the building and deployment of the Ghost platform.
+The `.github/workflows` directory contains GitHub Actions workflows for CI/CD. 
+ - `ci-workflow.yml` is pipeline for CI purposes. It is started on pull requests towards dev, stg or main and changes on terraform files in the infrastructure directory. It performs terraform init and terraform plan and provide feedback for the result.
+ Because terraform.tfvars are in gitignore file, the values are keept in github action secrets.
+ - `cd-workflow.yml` is pipeline for CD purposes. It is triggered when working branch is dev, stg or main. Also here the terraform.tfvars are keept in github action secrets.
+ - `cicd-developer-workflow.yml` is CI/CD pipeline configuration for deploying a Ghost platform using GitHub Actions. The pipeline is triggered by changes to specific paths and includes steps for checking out the code, setting up Kubernetes tools, and deploying to different environments using Helm.
 
 ## Getting Started
 
@@ -114,12 +118,24 @@ The `.github/workflows` directory contains GitHub Actions workflows for CI/CD. T
 - [Helm](https://helm.sh/docs/intro/install/)
 - [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
 - An Azure account with appropriate permissions
-- Docker
 
-### Setup
 
-1. **Clone the repository:**
+## Future improvements
 
-   ```sh
-   git clone https://github.com/your-username/your-repo.git
-   cd your-repo
+### Improvements:
+
+   1. Multi-Region AKS Deployment with Backup and Disaster Recovery
+
+      This repository should contains Terraform scripts to deploy Azure Kubernetes Service (AKS) clusters across multiple regions to ensure high availability and disaster recovery. The setup includes:
+
+      - Primary AKS cluster in West Europe.
+      - Secondary AKS cluster in North Europe for failover.
+      - Azure Traffic Manager to distribute traffic between the clusters.
+      - Backup strategies for stateful data.
+      - Backup of kuberentes cluster with Velero
+
+
+   2. Filter  helm chart for ghost platform
+      Bitnami ghost helm chart has lots of elements that will be not used. The end solution need to be clear, simple and easy to maintain.
+
+   3. Create monitoring for the platform. In ghost helm chart there is prometheus integration and can be integrated with Grafana     or  Azure monitoring dashboards.
